@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Upload - ESP8266</title>
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #a8c0ff, #3f2b96);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+    }
+
+    .container {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 600px;
+      padding: 40px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      color: #333;
+      margin-bottom: 30px;
+      font-weight: 600;
+    }
+
+    input[type="file"] {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 18px;
+      transition: background-color 0.3s ease, transform 0.2s;
+    }
+
+    input[type="file"]:hover {
+      background-color: #45a049;
+      transform: scale(1.05);
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #fileList {
+      margin-top: 30px;
+      text-align: left;
+      font-size: 16px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      padding: 12px 20px;
+      margin: 10px 0;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      font-size: 15px;
+    }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Popup Styles */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .popup-content {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .popup h2 {
+      font-size: 1.5rem;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .popup p {
+      font-size: 1.1rem;
+      color: #555;
+      margin-bottom: 25px;
+    }
+
+    .popup button {
+      padding: 12px 24px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .popup button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Credit Section -->
+  <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; color: #fff;">
+    Created by Arihant Bharadwaj 21BCT0356, Shreyas Mohan 21BCT0388
+  </div>
+
+  <div class="container">
+    <h1>Upload Your Files</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" name="file" id="fileInput" required>
+      <br><br>
+      <button type="submit">Upload File</button>
+    </form>
+
+    <div id="fileList">
+      <h2>Uploaded Files:</h2>
+      <ul id="files">
+        <!-- List of uploaded files will be populated here -->
+      </ul>
+    </div>
+  </div>
+
+  <!-- Popup for Upload Complete -->
+  <div id="uploadPopup" class="popup">
+    <div class="popup-content">
+      <h2>Upload Complete!</h2>
+      <p>Your file has been uploaded successfully.</p>
+      <button onclick="closePopup()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // Show Popup when file upload is complete
+    function showPopup() {
+      document.getElementById('uploadPopup').style.display = 'flex';
+    }
+
+    function closePopup() {
+      document.getElementById('uploadPopup').style.display = 'none';
+    }
+
+    // Handle the file upload
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      let formData = new FormData(this);
+      fetch('/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.text())
+      .then(data => {
+        console.log(data); // You can check the server response in the console
+        showPopup(); // Show the popup after successful upload
+        loadFileList(); // Reload the file list to include the uploaded file
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+
+    // Load the list of uploaded files from the server
+    function loadFileList() {
+      fetch('/files')
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('files').innerHTML = data;
+        });
+    }
+
+    // Load file list when the page is loaded
+    window.onload = function() {
+      loadFileList();
+    };
+  </script>
+  
+</body>
+</html>
